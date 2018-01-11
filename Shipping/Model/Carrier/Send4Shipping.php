@@ -46,7 +46,13 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
     public function getAllowedMethods()
     {
         return [
-            'send4_shipping' => $this->getConfigData('name')
+            'send4_shipping_1' => $this->getConfigData('name') . '_1',
+            'send4_shipping_2' => $this->getConfigData('name') . '_2',
+            'send4_shipping_3' => $this->getConfigData('name') . '_3',
+            'send4_shipping_4' => $this->getConfigData('name') . '_4',
+            'send4_shipping_5' => $this->getConfigData('name') . '_5',
+            'send4_shipping_6' => $this->getConfigData('name') . '_6',
+            'send4_shipping_7' => $this->getConfigData('name') . '_7',
         ];
     }
 
@@ -64,13 +70,9 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
 
         $token = $this->_ecommerceAuth();
 
-
         $getSend4Dots = $this->_getSend4Dots($token);
-        # $this->_logger->debug('url:' . json_encode($getSend4Dots));
-
 
         if ( !empty($getSend4Dots['dots']) ) {
-
             foreach($getSend4Dots['dots'] as $dot) {
                 $result->append($this->_getSend4Rates($dot));
             }
@@ -125,12 +127,13 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
         $shippingAddress = $this->_checkoutSession->getQuote()->getShippingAddress();
         $zip = $shippingAddress->getPostcode();
 
+        $itens = $this->getConfigData('items_to_returno');
+
         $address = $this->_getFullAddress($zip);
         $add = json_decode($address);
 
         $data = [
-            "ecommerce_id" => 1,
-            "items_to_return" => 4,
+            "items_to_return" => $itens,
             "location" => [
                 "address" => $add->logradouro,
                 "number" => "",
@@ -183,12 +186,12 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
     protected function _getSend4Rates($dot)
     {
 
-        $address = $dot['address']." - " . $dot['complement'] . " - ".$dot['neighbor'] . ", " . $dot['zip_code'];
+        $address = $dot['address'] . " - " . $dot['complement'] . " - ".$dot['neighbor'] . ", " . $dot['zip_code'];
 
         $method = $this->_rateMethodFactory->create();
         $method->setCarrier($this->_code . '_' . $dot['id']);
         $method->setCarrierTitle($this->getConfigData('title'));
-        $method->setMethod($this->_code);
+        $method->setMethod($this->_code . '_' . $dot['id']);
         $method->setMethodTitle($dot['id'] . " - " . $dot['trade_name'] . " - " . $dot['complement']);
         $method->setMethodDescription($address);
         $method->setPrice($this->getConfigData('price'));
