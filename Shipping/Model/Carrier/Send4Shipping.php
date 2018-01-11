@@ -50,6 +50,13 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
             'send4_shipping_2' => $this->getConfigData('name') . '_2',
             'send4_shipping_3' => $this->getConfigData('name') . '_3',
             'send4_shipping_4' => $this->getConfigData('name') . '_4',
+            'send4_shipping_5' => $this->getConfigData('name') . '_5',
+            'send4_shipping_6' => $this->getConfigData('name') . '_6',
+            'send4_shipping_7' => $this->getConfigData('name') . '_7',
+            'send4_shipping_8' => $this->getConfigData('name') . '_8',
+            'send4_shipping_9' => $this->getConfigData('name') . '_9',
+            'send4_shipping_10' => $this->getConfigData('name') . '_10',
+            'send4_shipping_11' => $this->getConfigData('name') . '_11',
         ];
     }
 

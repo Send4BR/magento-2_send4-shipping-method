@@ -26,6 +26,8 @@ class OrderStatePlugin
 
         $order = $result;
 
+        /*
+
         $firstname = $order->getCustomerFirstname();
         $lastname = $order->getCustomerLastname();
         $taxvat = $order->getCustomerTaxvat();
@@ -44,14 +46,13 @@ class OrderStatePlugin
         $customer = [
             'name' =>  str_replace("  ", " ", $orderData['customer_firstname'] . " " . $orderData['customer_middlename'] . " " . $orderData['customer_lastname']),
             'email' => $orderData['customer_email'],
-            'nin' => $orderData['customer_taxvat']
+            // TODO fix cpf
+            'nin' => '08518970962'
         ];
 
         $customer = [
             'invoice_number' => $order->getId(),
             'value' => $orderData['total_invoiced'],
-            'insurance_value' => null,
-            'shipping_company' => null,
             'customer' => $customer,
             'products' => []
         ];
@@ -62,6 +63,8 @@ class OrderStatePlugin
         $this->_logger->debug('$itens: ' . $itens);
 
         #}
+
+        */
 
         return $result;
     }
