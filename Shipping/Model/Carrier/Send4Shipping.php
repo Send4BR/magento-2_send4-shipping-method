@@ -188,7 +188,7 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
         $address = $dot['address'] . " - " . $dot['complement'] . " - ".$dot['neighbor'] . ", " . $dot['zip_code'];
 
         $method = $this->_rateMethodFactory->create();
-        $method->setCarrier($this->_code . "_{$i}");
+        $method->setCarrier($this->_code);
         $method->setCarrierTitle($this->getConfigData('title'));
         $method->setMethod($this->_code . "_{$i}");
         $method->setMethodTitle($dot['id'] . " - " . $dot['trade_name'] . " - " . $dot['complement']);
