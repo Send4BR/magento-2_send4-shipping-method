@@ -26,7 +26,6 @@ class OrderStatePlugin
 
         $order = $result;
 
-        /*
 
         $firstname = $order->getCustomerFirstname();
         $lastname = $order->getCustomerLastname();
@@ -44,28 +43,82 @@ class OrderStatePlugin
         $itens = json_encode($order->getItems()->getData());
 
         $customer = [
-            'name' =>  str_replace("  ", " ", $orderData['customer_firstname'] . " " . $orderData['customer_middlename'] . " " . $orderData['customer_lastname']),
-            'email' => $orderData['customer_email'],
-            // TODO fix cpf
-            'nin' => '08518970962'
+            'name' =>  trim(str_replace("  ", " ", $orderData['customer_firstname'] . " " . $orderData['customer_middlename'] . " " . $orderData['customer_lastname'])),
+            'email' => trim(strtolower($orderData['customer_email'])),
+            'nin' => '08518970962',
+            'phone' => '41995405366'
         ];
 
-        $customer = [
-            'invoice_number' => $order->getId(),
-            'value' => $orderData['total_invoiced'],
-            'customer' => $customer,
-            'products' => []
+        $payload = [
+            'order' => [
+                'invoice_number' => $order->getId(),
+                'value' => $orderData['total_invoiced'],
+                'customer' => $customer,
+                'is_reverse' => 0,
+                'insurance_value' => 0.0,
+                'products' => [],
+                'volumetry' => [
+                    'width' => 1.0,
+                    'weight' => 1.0,
+                    'length' => 1.0,
+                    'height' => 1.0
+                ]
+            ]
         ];
 
 
-        #if ($shipping == 'send4_shipping_send4_shipping') {
+        $url = "https://staging-api.send4.com.br/v1/";
 
-        $this->_logger->debug('$itens: ' . $itens);
+        $payload = json_encode($payload);
 
-        #}
+        $token = $this->_ecommerceAuth();
 
-        */
+        $ch = curl_init( $url . "orders");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "Content-Type: application/json",
+                "Authorization: Bearer {$token}"
+            ]
+        );
+        $result = curl_exec($ch);
+        curl_close($ch);
+        $retorno = json_decode($result, true);
 
         return $result;
+    }
+
+    protected function _ecommerceAuth()
+    {
+        #$url = $this->getConfigData('url');
+        $clientId = 6;
+        $key = "1fbbf309195b6b40aa842705f61a8b04";
+        $grant_type = "client_credentials";
+
+        $data = [
+            "grant_type" => $grant_type,
+            "client_id" => $clientId,
+            "client_secret" => $key
+        ];
+
+        $payload = json_encode($data);
+
+        $ch = curl_init( "https://staging-api.send4.com.br/v1/" . "auth/connect");
+
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "Content-Type: application/json"
+            ]
+        );
+
+        $result = curl_exec($ch);
+        curl_close($ch);
+        $retorno = json_decode($result, true);
+
+        return $retorno['token'];
+
     }
 }
