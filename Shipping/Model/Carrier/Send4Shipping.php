@@ -46,7 +46,10 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
     public function getAllowedMethods()
     {
         return [
-            'send4_shipping' => $this->getConfigData('name')
+            'send4_shipping_1' => $this->getConfigData('name') . '_1',
+            'send4_shipping_2' => $this->getConfigData('name') . '_2',
+            'send4_shipping_3' => $this->getConfigData('name') . '_3',
+            'send4_shipping_4' => $this->getConfigData('name') . '_4',
         ];
     }
 
@@ -66,9 +69,11 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
 
         $getSend4Dots = $this->_getSend4Dots($token);
 
+        $i = 1;
         if ( !empty($getSend4Dots['dots']) ) {
             foreach($getSend4Dots['dots'] as $dot) {
-                $result->append($this->_getSend4Rates($dot));
+                $result->append($this->_getSend4Rates($dot, $i));
+                $i++;
             }
         }
 
@@ -177,15 +182,15 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
         return $resultado;
     }
 
-    protected function _getSend4Rates($dot)
+    protected function _getSend4Rates($dot, $i)
     {
 
         $address = $dot['address'] . " - " . $dot['complement'] . " - ".$dot['neighbor'] . ", " . $dot['zip_code'];
 
         $method = $this->_rateMethodFactory->create();
-        $method->setCarrier($this->_code);
+        $method->setCarrier($this->_code . "_{$i}");
         $method->setCarrierTitle($this->getConfigData('title'));
-        $method->setMethod($this->_code);
+        $method->setMethod($this->_code . "_{$i}");
         $method->setMethodTitle($dot['id'] . " - " . $dot['trade_name'] . " - " . $dot['complement']);
         $method->setMethodDescription($address);
         $method->setPrice($this->getConfigData('price'));
