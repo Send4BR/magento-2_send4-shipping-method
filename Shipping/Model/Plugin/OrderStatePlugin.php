@@ -40,7 +40,7 @@ class OrderStatePlugin
         $data = $order->getData();
         $orderData = json_encode($data);
 
-        $itens = json_encode($order->getItems()->getData());
+        # $itens = json_encode($order->getItems()->getData());
 
         $customer = [
             'name' =>  trim(str_replace("  ", " ", $orderData['customer_firstname'] . " " . $orderData['customer_middlename'] . " " . $orderData['customer_lastname'])),
