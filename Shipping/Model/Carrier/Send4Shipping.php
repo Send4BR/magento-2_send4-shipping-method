@@ -46,13 +46,7 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
     public function getAllowedMethods()
     {
         return [
-            'send4_shipping_1' => $this->getConfigData('name') . '_1',
-            'send4_shipping_2' => $this->getConfigData('name') . '_2',
-            'send4_shipping_3' => $this->getConfigData('name') . '_3',
-            'send4_shipping_4' => $this->getConfigData('name') . '_4',
-            'send4_shipping_5' => $this->getConfigData('name') . '_5',
-            'send4_shipping_6' => $this->getConfigData('name') . '_6',
-            'send4_shipping_7' => $this->getConfigData('name') . '_7',
+            'send4_shipping' => $this->getConfigData('name')
         ];
     }
 
@@ -191,7 +185,7 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
         $method = $this->_rateMethodFactory->create();
         $method->setCarrier($this->_code . '_' . $dot['id']);
         $method->setCarrierTitle($this->getConfigData('title'));
-        $method->setMethod($this->_code . '_' . $dot['id']);
+        $method->setMethod($this->_code);
         $method->setMethodTitle($dot['id'] . " - " . $dot['trade_name'] . " - " . $dot['complement']);
         $method->setMethodDescription($address);
         $method->setPrice($this->getConfigData('price'));
