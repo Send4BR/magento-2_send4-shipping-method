@@ -4,17 +4,23 @@ namespace Send4\Shipping\Model\Carrier;
 use Magento\Quote\Model\Quote\Address\RateRequest;
 use Magento\Shipping\Model\Rate\Result;
 
+/**
+ * Class Send4Shipping
+ * @package Send4\Shipping\Model\Carrier
+ */
 class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier implements
     \Magento\Shipping\Model\Carrier\CarrierInterface
 {
     /**
      * @var string
      */
-    protected $_code = 'send4_shipping';
+    protected $_code = 'send4shipping';
 
     protected $_checkoutSession = null;
 
     protected $_logger;
+
+    protected $_rateFactory;
 
     /**
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
@@ -22,6 +28,8 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
      * @param \Psr\Log\LoggerInterface $logger
      * @param \Magento\Shipping\Model\Rate\ResultFactory $rateResultFactory
      * @param \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory
+     * @param \Magento\Checkout\Model\Session $checkoutSession
+     * @param \Magento\Shipping\Model\Rate\ResultFactory $rateFactory
      * @param array $data
      */
     public function __construct(
@@ -31,12 +39,15 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
         \Magento\Shipping\Model\Rate\ResultFactory $rateResultFactory,
         \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
         \Magento\Checkout\Model\Session $checkoutSession,
+        \Magento\Shipping\Model\Rate\ResultFactory $rateFactory,
         array $data = []
-    ) {
+    )
+    {
         $this->_checkoutSession = $checkoutSession;
         $this->_rateResultFactory = $rateResultFactory;
         $this->_rateMethodFactory = $rateMethodFactory;
         $this->_logger = $logger;
+        $this->_rateFactory = $rateFactory;
         parent::__construct($scopeConfig, $rateErrorFactory, $logger, $data);
     }
 
@@ -45,8 +56,10 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
      */
     public function getAllowedMethods()
     {
+        $this->_logger->info('@send4 - Get allowed Methods');
+
         return [
-            'send4_shipping' => $this->getConfigData('name')
+            $this->getCarrierCode() => $this->getConfigData('name')
         ];
     }
 
@@ -56,38 +69,87 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
      */
     public function collectRates(RateRequest $request)
     {
+        /**
+         * Method is active
+         */
         if (!$this->getConfigFlag('active')) {
             return false;
         }
 
-        $result = $this->_rateResultFactory->create();
+        $this->_logger->info('@send4 - Shipping method is active.');
 
-        $token = $this->_ecommerceAuth();
+        /**
+         * Shipping results
+         */
+        return $this->_rateOptionFactory();
+    }
 
+    public function _rateOptionFactory()
+    {
 
-        $getSend4Dots = $this->_getSend4Dots($token);
-        # $this->_logger->debug('url:' . json_encode($getSend4Dots));
+        /**
+         * Get send4 dots
+         */
+        $dots = $this->_getSend4Dots();
 
+        if (!$dots) {
+            return false;
+        }
 
-        if ( !empty($getSend4Dots['dots']) ) {
+        /**
+         * Shipping results
+         */
+        $result = $this->_rateFactory->create();
 
-            foreach($getSend4Dots['dots'] as $dot) {
-                $result->append($this->_getSend4Rates($dot));
+        foreach ($dots as $dot) {
+
+            /**
+             * Description Pattern: Place name - Address - Complement - Aprox
+             */
+            $description = $dot['trade_name'];
+
+            if ($dot['locale']){
+                $description .= ' - ' . $dot['locale'];
             }
+
+            if ($dot['complement']){
+                $description .= " - " . $dot['complement'];
+            }
+
+            if ($dot['distance']){
+                $description .= ' - Aprox. ' . $dot['distance'];
+            }
+
+            $rate = $this->_rateMethodFactory->create();
+            $rate->setCarrier($this->_code);
+            $rate->setCarrierTitle($this->getConfigData('title'));
+            $rate->setMethodTitle($description);
+            $rate->setMethod($this->_code . '_#' . $dot['id']);
+            $rate->setCost($this->getConfigData('price'));
+            $rate->setMethodDescription($description);
+            $rate->setPrice($this->getConfigData('price'));
+            $result->append($rate);
         }
 
         return $result;
     }
 
 
-
-    protected function _ecommerceAuth()
+    public function _ecommerceAuth()
     {
+        $this->_logger->info('@send4 - E-commerce authentication.');
+
+        /**
+         * Get e-commerce infos from admin
+         */
         $url = $this->getConfigData('url');
         $clientId = $this->getConfigData('client_id');
         $key = $this->getConfigData('client_secret');
         $grant_type = "client_credentials";
 
+        /**
+         * Prepare data to authentication
+         */
         $data = [
             "grant_type" => $grant_type,
             "client_id" => $clientId,
@@ -96,10 +158,7 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
 
         $payload = json_encode($data);
 
-        #$this->_logger->debug('url:' . $payload);
-
-        $ch = curl_init( $url . "auth/connect");
-
+        $ch = curl_init($url . "auth/connect");
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -110,91 +169,82 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
 
         $result = curl_exec($ch);
         curl_close($ch);
-        $retorno = json_decode($result, true);
 
-        return $retorno['token'];
+        $response = json_decode($result, true);
+
+        if (isset($response) && isset($response['token'])){
+            $this->_logger->info('@send4 - E-commerce authentication success!');
+            return $response['token'];
+        }
+
+        return false;
 
     }
 
-
-    protected function _getSend4Dots($token)
+    /**
+     * Get dots from Send4
+     *
+     * @return mixed
+     * @throws \Exception
+     */
+    protected function _getSend4Dots()
     {
+        /**
+         * E-commerce Authentication
+         */
+        $token = $this->_ecommerceAuth();
 
+        if (!$token){
+            return false;
+        }
+
+        /**
+         * Get config data
+         */
         $url = $this->getConfigData('url');
+        $itens = $this->getConfigData('itens_to_return');
 
-        $shippingAddress = $this->_checkoutSession->getQuote()->getShippingAddress();
-        $zip = $shippingAddress->getPostcode();
+        /**
+         * Get informed checkout zip code
+         */
+        $zip = $this->_checkoutSession->getQuote()->getShippingAddress()->getPostcode();
 
-        $address = $this->_getFullAddress($zip);
-        $add = json_decode($address);
+        $this->_logger->critical('itens:' . json_encode($itens));
 
         $data = [
-            "ecommerce_id" => 1,
-            "items_to_return" => 4,
+            "itens_to_return" => ($itens ?? 5),
             "location" => [
-                "address" => $add->logradouro,
-                "number" => "",
-                "complement" => "",
-                "neighbor" => $add->bairro,
-                "city "=> $add->cidade,
-                "state" => $add->uf,
-                "country" => "Brasil",
                 "postal_code" => $zip,
-                "lat" => null,
-                "lng" => null
             ]
         ];
 
         $payload = json_encode($data);
 
-        $ch = curl_init($url . "dots/closests");
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                "Content-Type: application/json",
-                "Authorization: Bearer " . $token,
-                "Contet-Lenght: " . strlen($payload)
-            ]
-        );
+        try {
+            $ch = curl_init($url . "dots/closests");
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    "Content-Type: application/json",
+                    "Authorization: Bearer " . $token,
+                    "Contet-Lenght: " . strlen($payload)
+                ]
+            );
 
-        $result = curl_exec($ch);
-        curl_close($ch);
+            $result = curl_exec($ch);
+            curl_close($ch);
+
+            $this->_logger->info('Buscou os pontos com sucesso!');
+
+        } catch (Exception $e) {
+            return false;
+        }
 
         $dots = json_decode($result, true);
+
         return $dots;
 
-    }
-
-    protected function _getFullAddress($cep)
-    {
-        $webservice = 'http://cep.republicavirtual.com.br/web_cep.php';
-        $ch = curl_init();
-        curl_setopt ($ch, CURLOPT_URL, $webservice . '?cep='. urlencode($cep) . '&formato=JSON');
-        curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, 5);
-
-        $resultado = curl_exec($ch);
-        curl_close($ch);
-
-        return $resultado;
-    }
-
-    protected function _getSend4Rates($dot)
-    {
-
-        $address = $dot['address']." - " . $dot['complement'] . " - ".$dot['neighbor'] . ", " . $dot['zip_code'];
-
-        $method = $this->_rateMethodFactory->create();
-        $method->setCarrier($this->_code . '_' . $dot['id']);
-        $method->setCarrierTitle($this->getConfigData('title'));
-        $method->setMethod($this->_code . '_' . $dot['id']);
-        $method->setMethodTitle($dot['id'] . " - " . $dot['trade_name'] . " - " . $dot['complement']);
-        $method->setMethodDescription($address);
-        $method->setPrice($this->getConfigData('price'));
-        $method->setCost(0);
-
-        return $method;
     }
 
 }

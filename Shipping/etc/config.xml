@@ -2,7 +2,7 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
     <default>
         <carriers>
-            <send4_shipping>
+            <send4shipping>
                 <active>1</active>
                 <sallowspecific>0</sallowspecific>
                 <model>Send4\Shipping\Model\Carrier\Send4Shipping</model>
@@ -11,7 +11,7 @@
                 <title>Send4 Shipping Method</title>
                 <type>I</type>
                 <specificerrmsg>Essa forma de entrega não está disponível.</specificerrmsg>
-            </send4_shipping>
+            </send4shipping>
         </carriers>
     </default>
 </config>
