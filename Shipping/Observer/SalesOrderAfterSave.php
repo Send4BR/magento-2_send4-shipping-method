@@ -103,7 +103,7 @@ class SalesOrderAfterSave implements ObserverInterface
          * Prepare API URL
          */
         $APIBaseUrl = $this->send4Shipping->getConfigData('url');
-        $APIOrderUrl = $APIBaseUrl . 'orders';
+        $APIOrderUrl = $APIBaseUrl . 'client/orders';
 
         /**
          * Get dot number
@@ -125,21 +125,19 @@ class SalesOrderAfterSave implements ObserverInterface
                 'user' => [
                     'name'          => $order->getBillingAddress()->getFirstname() . ' ' . $order->getBillingAddress()->getLastname(),
                     'email'         => $order->getCustomerEmail(),
-                    'nin'           => '00000000000',
+                    'nin'           => $order->getCustomerTaxvat() ?? '',
                     'phone'         => $order->getBillingAddress()->getTelephone()
                 ],
                 'invoice_number'    => $order->getRealOrderId(),
-                'shipping_company'  => null,
                 'value'             => $order->getTotalInvoiced(),
                 'insurance_value'   => null,
                 'volumetry'         => [
                     'width'         => 0,
-                    'weight'         => 0,
+                    'weight'         => $order->getWeight() ?? 0,
                     'length'         => 0,
                     'height'         => 0,
                 ],
                 'photo'             => null,
-                'signature'         => null,
                 'ordered_at'        => $order->getCreatedAt(),
                 'products'          => []
             ]
@@ -150,10 +148,11 @@ class SalesOrderAfterSave implements ObserverInterface
             $itemData = [
                 'name'          => $item->getName(),
                 'id_code'       => $item->getId(),
+                'sku'           => $item->getSku(),
                 'quantity'      => $item->getQtyInvoiced(),
                 'volumetry'     => [
                     'width'         => 0,
-                    'weight'         => 0,
+                    'weight'         => $item->getWeight() ?? 0,
                     'length'         => 0,
                     'height'         => 0,
                 ]

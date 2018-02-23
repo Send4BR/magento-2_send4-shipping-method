@@ -106,7 +106,7 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
             /**
              * Description Pattern: Place name - Address - Complement - Aprox
              */
-            $description = $dot['trade_name'];
+            $description = $dot['display_name'];
 
             if ($dot['address']){
                 $description .= ' - ' . $dot['address'];
@@ -221,7 +221,7 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
         $payload = json_encode($data);
 
         try {
-            $ch = curl_init($url . "dots/closest");
+            $ch = curl_init($url . "client/dots/closest");
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
