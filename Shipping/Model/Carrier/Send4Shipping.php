@@ -108,8 +108,8 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
              */
             $description = $dot['trade_name'];
 
-            if ($dot['locale']){
-                $description .= ' - ' . $dot['locale'];
+            if ($dot['address']){
+                $description .= ' - ' . $dot['address'];
             }
 
             if ($dot['complement']){
@@ -158,7 +158,7 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
 
         $payload = json_encode($data);
 
-        $ch = curl_init($url . "auth/connect");
+        $ch = curl_init($url . "auth/client/login");
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -172,9 +172,9 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
 
         $response = json_decode($result, true);
 
-        if (isset($response) && isset($response['token'])){
+        if (isset($response) && isset($response['access_token'])){
             $this->_logger->info('@send4 - E-commerce authentication success!');
-            return $response['token'];
+            return $response['access_token'];
         }
 
         return false;
@@ -221,7 +221,7 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
         $payload = json_encode($data);
 
         try {
-            $ch = curl_init($url . "dots/closests");
+            $ch = curl_init($url . "dots/closest");
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

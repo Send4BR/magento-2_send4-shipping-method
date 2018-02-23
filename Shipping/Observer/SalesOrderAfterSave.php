@@ -122,7 +122,7 @@ class SalesOrderAfterSave implements ObserverInterface
         $data = [
             'order' => [
                 'dot'               => $dot[0][0],
-                'customer' => [
+                'user' => [
                     'name'          => $order->getBillingAddress()->getFirstname() . ' ' . $order->getBillingAddress()->getLastname(),
                     'email'         => $order->getCustomerEmail(),
                     'nin'           => '00000000000',
@@ -195,8 +195,9 @@ class SalesOrderAfterSave implements ObserverInterface
 
         if (isset($response['status']) && $response['status'] == 'error') {
             $this->logger->error(
-                sprintf('@send4 - API Return Message -> %s | Order number %s of customer %s  ',
+                sprintf('@send4 - API Return Message -> %s (%s) | Order number %s of customer %s  ',
                     $response['message'],
+                    $dot[0][0],
                     $order->getRealOrderId(),
                     $order->getCustomerEmail()
                 )
