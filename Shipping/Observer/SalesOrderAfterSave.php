@@ -122,10 +122,12 @@ class SalesOrderAfterSave implements ObserverInterface
         $data = [
             'order' => [
                 'dot'               => $dot[0][0],
+                'magento'           => true,
                 'user' => [
-                    'name'          => $order->getBillingAddress()->getFirstname() . ' ' . $order->getBillingAddress()->getLastname(),
+                    'first_name'    => $order->getBillingAddress()->getFirstname(),
+                    'last_name'     => $order->getBillingAddress()->getLastname() ?? '',
                     'email'         => $order->getCustomerEmail(),
-                    'nin'           => $order->getCustomerTaxvat() ?? '',
+                    'document'           => $order->getCustomerTaxvat() ?? '',
                     'phone'         => $order->getBillingAddress()->getTelephone()
                 ],
                 'invoice_number'    => $order->getRealOrderId(),
