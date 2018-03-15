@@ -90,9 +90,9 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
         /**
          * Get send4 dots
          */
-        $dots = $this->_getSend4Dots();
+        $dots = (object) $this->_getSend4Dots();
 
-        if (!$dots) {
+        if (!$dots->success) {
             return false;
         }
 
@@ -101,7 +101,7 @@ class Send4Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier impl
          */
         $result = $this->_rateFactory->create();
 
-        foreach ($dots as $dot) {
+        foreach ($dots->dots as $dot) {
 
             /**
              * Description Pattern: Place name - Address - Complement - Aprox
